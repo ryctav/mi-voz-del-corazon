@@ -9,12 +9,11 @@ const linkContainer = document.getElementById("linkContainer");
 let mediaRecorder;
 let audioChunks = [];
 let audioBlob;
+let audioUrl;
 
 recordBtn.onclick = async () => {
   try {
-    statusText.textContent = "Solicitando acceso al micrófono...";
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
 
@@ -24,10 +23,9 @@ recordBtn.onclick = async () => {
 
     mediaRecorder.onstop = () => {
       audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-      const audioUrl = URL.createObjectURL(audioBlob);
+      audioUrl = URL.createObjectURL(audioBlob);
       audioPlayer.src = audioUrl;
-
-      statusText.textContent = "Audio listo para escuchar. Si te gusta, confirma para generar QR.";
+      statusText.textContent = "Grabación lista. Puedes Confirmar o Grabar otra vez.";
       confirmBtn.disabled = false;
     };
 
@@ -37,30 +35,28 @@ recordBtn.onclick = async () => {
     stopBtn.disabled = false;
     confirmBtn.disabled = true;
 
+    // Limpiar QR y link al comenzar nueva grabación
+    qrContainer.innerHTML = "";
+    linkContainer.innerHTML = "";
   } catch (err) {
     console.error("Error al acceder al micrófono:", err);
-    statusText.textContent = "No se pudo acceder al micrófono. Revisa permisos y navegador.";
+    statusText.textContent = "No se pudo acceder al micrófono. Por favor, permite el acceso.";
   }
 };
 
 stopBtn.onclick = () => {
-  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+  if (mediaRecorder && mediaRecorder.state === "recording") {
     mediaRecorder.stop();
-    statusText.textContent = "Procesando audio...";
+    statusText.textContent = "Procesando...";
     recordBtn.disabled = false;
     stopBtn.disabled = true;
   }
 };
 
-// Cuando confirmen, subimos y generamos QR
 confirmBtn.onclick = async () => {
-  if (!audioBlob) {
-    statusText.textContent = "No hay audio para subir.";
-    return;
-  }
+  if (!audioBlob) return;
 
   statusText.textContent = "Subiendo el audio...";
-  confirmBtn.disabled = true;
 
   const formData = new FormData();
   formData.append("file", audioBlob, "mensaje.webm");
@@ -76,20 +72,18 @@ confirmBtn.onclick = async () => {
       const audioLink = data.data.downloadPage;
       statusText.textContent = "¡Listo! Aquí está tu mensaje:";
       linkContainer.innerHTML = `<a href="${audioLink}" target="_blank">${audioLink}</a>`;
-
-      qrContainer.innerHTML = ""; // limpiar QR anterior
+      qrContainer.innerHTML = "";
       new QRCode(qrContainer, {
         text: audioLink,
         width: 200,
         height: 200,
       });
+      confirmBtn.disabled = true; // evitar subir varias veces sin grabar de nuevo
     } else {
       statusText.textContent = "Error al subir el audio 😢";
-      confirmBtn.disabled = false;
     }
-  } catch (err) {
-    console.error("Error al subir el audio:", err);
+  } catch (error) {
+    console.error("Error al subir archivo:", error);
     statusText.textContent = "Error al subir el audio 😢";
-    confirmBtn.disabled = false;
   }
 };
