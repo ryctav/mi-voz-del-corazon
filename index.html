@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mensaje de Voz</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>🎙️ Graba tu mensaje de voz</h1>
+  <button id="recordBtn">Grabar</button>
+  <button id="stopBtn" disabled>Detener</button>
+  <p id="status">Pulsa "Grabar" para comenzar</p>
+  <audio id="audioPlayer" controls></audio>
+  <div id="qrContainer"></div>
+  <p id="linkContainer"></p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+body {
+    font-family: Arial, sans-serif;
+    max-width: 500px;
+    margin: 2em auto;
+    text-align: center;
+    padding: 0 1em;
+  }
+  
+  button {
+    margin: 0.5em;
+    padding: 0.7em 1.5em;
+    font-size: 1.1em;
+    cursor: pointer;
+  }
+  
+  audio {
+    margin-top: 1em;
+    width: 100%;
+  }
+  
