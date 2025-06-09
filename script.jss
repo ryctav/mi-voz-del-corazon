@@ -1,5 +1,6 @@
 const recordBtn = document.getElementById("recordBtn");
 const stopBtn = document.getElementById("stopBtn");
+const confirmBtn = document.getElementById("confirmBtn");
 const statusText = document.getElementById("status");
 const audioPlayer = document.getElementById("audioPlayer");
 const qrContainer = document.getElementById("qrContainer");
@@ -11,7 +12,9 @@ let audioBlob;
 
 recordBtn.onclick = async () => {
   try {
+    statusText.textContent = "Solicitando acceso al micrófono...";
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
     mediaRecorder = new MediaRecorder(stream);
     audioChunks = [];
 
@@ -23,38 +26,42 @@ recordBtn.onclick = async () => {
       audioBlob = new Blob(audioChunks, { type: "audio/webm" });
       const audioUrl = URL.createObjectURL(audioBlob);
       audioPlayer.src = audioUrl;
-      statusText.textContent = "Audio grabado. Escúchalo y confirma para subir.";
-      recordBtn.disabled = true;
-      stopBtn.disabled = true;
 
-      if (!document.getElementById("uploadBtn")) {
-        const uploadBtn = document.createElement("button");
-        uploadBtn.id = "uploadBtn";
-        uploadBtn.textContent = "Confirmar y subir";
-        document.body.appendChild(uploadBtn);
-
-        uploadBtn.onclick = uploadAudio;
-      }
+      statusText.textContent = "Audio listo para escuchar. Si te gusta, confirma para generar QR.";
+      confirmBtn.disabled = false;
     };
 
     mediaRecorder.start();
     statusText.textContent = "🎙️ Grabando...";
     recordBtn.disabled = true;
     stopBtn.disabled = false;
-  } catch (error) {
-    statusText.textContent = "No se pudo acceder al micrófono 😢";
+    confirmBtn.disabled = true;
+
+  } catch (err) {
+    console.error("Error al acceder al micrófono:", err);
+    statusText.textContent = "No se pudo acceder al micrófono. Revisa permisos y navegador.";
   }
 };
 
 stopBtn.onclick = () => {
-  mediaRecorder.stop();
-  statusText.textContent = "Grabación detenida.";
-  recordBtn.disabled = false;
-  stopBtn.disabled = true;
+  if (mediaRecorder && mediaRecorder.state !== "inactive") {
+    mediaRecorder.stop();
+    statusText.textContent = "Procesando audio...";
+    recordBtn.disabled = false;
+    stopBtn.disabled = true;
+  }
 };
 
-async function uploadAudio() {
+// Cuando confirmen, subimos y generamos QR
+confirmBtn.onclick = async () => {
+  if (!audioBlob) {
+    statusText.textContent = "No hay audio para subir.";
+    return;
+  }
+
   statusText.textContent = "Subiendo el audio...";
+  confirmBtn.disabled = true;
+
   const formData = new FormData();
   formData.append("file", audioBlob, "mensaje.webm");
 
@@ -69,17 +76,20 @@ async function uploadAudio() {
       const audioLink = data.data.downloadPage;
       statusText.textContent = "¡Listo! Aquí está tu mensaje:";
       linkContainer.innerHTML = `<a href="${audioLink}" target="_blank">${audioLink}</a>`;
-      qrContainer.innerHTML = "";
+
+      qrContainer.innerHTML = ""; // limpiar QR anterior
       new QRCode(qrContainer, {
         text: audioLink,
         width: 200,
         height: 200,
       });
-      document.getElementById("uploadBtn").disabled = true;
     } else {
       statusText.textContent = "Error al subir el audio 😢";
+      confirmBtn.disabled = false;
     }
-  } catch (error) {
+  } catch (err) {
+    console.error("Error al subir el audio:", err);
     statusText.textContent = "Error al subir el audio 😢";
+    confirmBtn.disabled = false;
   }
-}
+};
